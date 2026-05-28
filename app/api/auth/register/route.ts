@@ -43,25 +43,6 @@ export async function POST(request: Request) {
       VALUES (${insertedUserId}, 0.00, 0.00, 0.00)
     `;
 
-    // Issue 100 BX Referral Bonus to Referrer if exists
-    if (referrerId) {
-      // Find referrer's wallet
-      const { rows: refWallets } = await sql`SELECT id FROM wallets WHERE user_id = ${referrerId}`;
-      if (refWallets.length > 0) {
-        const refWalletId = refWallets[0].id;
-        
-        // System injects 100 BX to Referrer
-        await sql`
-          UPDATE wallets SET bx_balance = bx_balance + 100 WHERE id = ${refWalletId}
-        `;
-        
-        // Record in ledger (Sender NULL = System)
-        await sql`
-          INSERT INTO bx_transactions (receiver_wallet_id, amount, tx_type, description)
-          VALUES (${refWalletId}, 100.00, 'mlm_commission', 'Direct referral bonus for inviting user')
-        `;
-      }
-    }
 
     return NextResponse.json({ success: true, userId: insertedUserId });
   } catch (error: any) {
