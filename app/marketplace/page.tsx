@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { sql } from "@vercel/postgres";
+import { unstable_noStore as noStore } from "next/cache";
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function Marketplace() {
+  noStore();
   // Fetch deals and join with users to get seller name
   const { rows: deals } = await sql`
     SELECT d.id, d.title, d.price_total, d.accept_cash_pct, d.image_url, d.created_at, u.display_name as seller_name 

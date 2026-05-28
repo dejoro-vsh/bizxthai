@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { sql } from "@vercel/postgres";
+import { unstable_noStore as noStore } from "next/cache";
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function SellerDashboard() {
+  noStore();
   // Fetch deals (In a real app, filter by seller_id. For demo, we fetch all open deals)
   const { rows: deals } = await sql`
     SELECT id, title, price_total, image_url, accept_cash_pct, created_at 
