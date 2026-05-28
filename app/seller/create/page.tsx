@@ -55,7 +55,7 @@ export default function CreateProductPage() {
       const dealData = await dealRes.json();
       if (dealData.success) {
         alert("ลงสินค้าสำเร็จ!");
-        router.push("/seller/dashboard");
+        window.location.href = "/seller/dashboard";
       } else {
         throw new Error(dealData.error || "Failed to create deal");
       }
