@@ -8,7 +8,7 @@ export default function Marketplace() {
       sellerName: "SuperPrint Co.,Ltd",
       avatar: "https://i.pravatar.cc/150?img=33",
       title: "บริการพิมพ์บรรจุภัณฑ์และฉลากสินค้า (ว่าง 2 คิว)",
-      image: "https://images.unsplash.com/photo-1624458514102-1811eb2ed33c?q=80&w=800&auto=format&fit=crop",
+      image: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=800&auto=format&fit=crop",
       totalPrice: 20000,
       paymentType: "hybrid", // 50% Cash / 50% BX
       time: "2 ชม. ที่แล้ว"
@@ -75,7 +75,7 @@ export default function Marketplace() {
             </div>
 
             {/* Action Button */}
-            <Link href="/checkout" style={{ display: 'block', width: "100%", marginTop: "16px", textDecoration: 'none' }}>
+            <Link href={`/checkout?id=${deal.id}&price=${deal.totalPrice}&type=${deal.paymentType}`} style={{ display: 'block', width: "100%", marginTop: "16px", textDecoration: 'none' }}>
               <button style={{ width: "100%", padding: "12px", backgroundColor: "#1a1a1a", color: "white", border: "none", borderRadius: "8px", fontWeight: 600, fontSize: "14px", cursor: "pointer" }}>
                 ติดต่อซื้อ / จ่ายเงิน
               </button>
