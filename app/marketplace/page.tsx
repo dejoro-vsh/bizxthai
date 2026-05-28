@@ -1,27 +1,38 @@
 import Link from "next/link";
+import { sql } from "@vercel/postgres";
 
-export default function Marketplace() {
-  // Mock Data for the Feed
-  const deals = [
+export const dynamic = 'force-dynamic';
+
+export default async function Marketplace() {
+  // Fetch deals and join with users to get seller name
+  const { rows: deals } = await sql`
+    SELECT d.id, d.title, d.price_total, d.accept_cash_pct, d.image_url, d.created_at, u.display_name as seller_name 
+    FROM idle_deals d
+    LEFT JOIN users u ON d.seller_id = u.id
+    WHERE d.status = 'open'
+    ORDER BY d.created_at DESC
+  `;
+
+  // Provide fallback mock data if DB is empty to keep UI looking good during demo
+  const displayDeals = deals.length > 0 ? deals.map(d => ({
+    id: d.id,
+    sellerName: d.seller_name || "Unknown Seller",
+    avatar: "https://i.pravatar.cc/150?img=" + (Math.floor(Math.random() * 50) + 1), // Random mock avatar
+    title: d.title,
+    image: d.image_url || "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=800",
+    totalPrice: Number(d.price_total),
+    paymentType: Number(d.accept_cash_pct) === 0 ? "bx_only" : "hybrid",
+    time: "ล่าสุด"
+  })) : [
     {
-      id: 1,
+      id: "mock1",
       sellerName: "SuperPrint Co.,Ltd",
       avatar: "https://i.pravatar.cc/150?img=33",
       title: "บริการพิมพ์บรรจุภัณฑ์และฉลากสินค้า (ว่าง 2 คิว)",
       image: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?q=80&w=800&auto=format&fit=crop",
       totalPrice: 20000,
-      paymentType: "hybrid", // 50% Cash / 50% BX
+      paymentType: "hybrid",
       time: "2 ชม. ที่แล้ว"
-    },
-    {
-      id: 2,
-      sellerName: "Studio Light",
-      avatar: "https://i.pravatar.cc/150?img=47",
-      title: "ให้เช่าสตูดิโอถ่ายภาพ พร้อมอุปกรณ์ครบเซ็ต (รายวัน)",
-      image: "https://images.unsplash.com/photo-1600607686527-6fb886090705?q=80&w=800&auto=format&fit=crop",
-      totalPrice: 5000,
-      paymentType: "bx_only", // 100% BX
-      time: "5 ชม. ที่แล้ว"
     }
   ];
 
@@ -35,7 +46,7 @@ export default function Marketplace() {
 
       {/* Feed Area */}
       <div style={{ padding: "16px 0", display: "flex", flexDirection: "column", gap: "16px" }}>
-        {deals.map((deal) => (
+        {displayDeals.map((deal) => (
           <div key={deal.id} style={{ backgroundColor: "#ffffff", padding: "16px", borderTop: "1px solid #eee", borderBottom: "1px solid #eee" }}>
             
             {/* Post Header */}
@@ -70,7 +81,7 @@ export default function Marketplace() {
                 color: deal.paymentType === "bx_only" ? "#00B900" : "#e11d48",
                 border: deal.paymentType === "bx_only" ? "1px solid #bbf7d0" : "1px solid #fecdd3"
               }}>
-                {deal.paymentType === "bx_only" ? "✅ รับ BX 100%" : "💳 เงินสด 50% + BX 50%"}
+                {deal.paymentType === "bx_only" ? "✅ รับ BX 100%" : `💳 เงินสด 50% + BX 50%`}
               </div>
             </div>
 
