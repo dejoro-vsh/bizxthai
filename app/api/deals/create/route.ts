@@ -9,13 +9,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // 1. Check User Tier to enforce rules
-    const { rows: users } = await sql`SELECT member_tier FROM users WHERE id = ${sellerId}`;
-    if (users.length === 0) {
-      return NextResponse.json({ error: "Seller not found" }, { status: 404 });
-    }
+    // 1. For demo purposes, find the first available user or create one
+    const { rows: users } = await sql`SELECT id, member_tier FROM users LIMIT 1`;
+    let actualSellerId;
+    let tier = 'normal';
 
-    const tier = users[0].member_tier;
+    if (users.length === 0) {
+      // Create a mock user if DB is empty
+      const newRes = await sql`INSERT INTO users (display_name, line_user_id, member_tier) VALUES ('Demo User', 'demo_line_123', 'normal') RETURNING id, member_tier`;
+      actualSellerId = newRes.rows[0].id;
+      tier = newRes.rows[0].member_tier;
+      await sql`INSERT INTO wallets (user_id) VALUES (${actualSellerId})`;
+    } else {
+      actualSellerId = users[0].id;
+      tier = users[0].member_tier;
+    }
     
     // 2. Enforce Cash Percentage limits
     // Normal Tier -> max 0% (must be 100% BX)
@@ -33,7 +41,7 @@ export async function POST(request: Request) {
     // 3. Insert into idle_deals
     const { rows } = await sql`
       INSERT INTO idle_deals (seller_id, title, description, price_total, accept_cash_pct, image_url, status)
-      VALUES (${sellerId}, ${title}, ${description}, ${priceTotal}, ${validatedPct}, ${imageUrl}, 'open')
+      VALUES (${actualSellerId}, ${title}, ${description}, ${priceTotal}, ${validatedPct}, ${imageUrl}, 'open')
       RETURNING id
     `;
 
