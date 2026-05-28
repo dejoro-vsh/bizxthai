@@ -54,15 +54,24 @@ export default function Dashboard() {
       </div>
 
       {/* Action Buttons */}
-      <div style={{ display: "flex", gap: "12px", padding: "24px 20px" }}>
-        <button style={{ flex: 1, backgroundColor: "#ffffff", border: "1px solid #eee", padding: "16px", borderRadius: "16px", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
-          <div style={{ width: 40, height: 40, backgroundColor: "#e6f8e6", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#00B900", fontSize: "20px" }}>💸</div>
-          <span style={{ fontSize: "14px", fontWeight: 600, color: "#333" }}>รับ/โอน BX</span>
-        </button>
-        <Link href="/marketplace" style={{ flex: 1, textDecoration: "none" }}>
-          <button style={{ width: "100%", backgroundColor: "#ffffff", border: "1px solid #eee", padding: "16px", borderRadius: "16px", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
-            <div style={{ width: 40, height: 40, backgroundColor: "#e6f8e6", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#00B900", fontSize: "20px" }}>🛍️</div>
-            <span style={{ fontSize: "14px", fontWeight: 600, color: "#333" }}>ตลาด (Market)</span>
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "24px 20px" }}>
+        <div style={{ display: "flex", gap: "12px" }}>
+          <button style={{ flex: 1, backgroundColor: "#ffffff", border: "1px solid #eee", padding: "16px", borderRadius: "16px", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
+            <div style={{ width: 40, height: 40, backgroundColor: "#e6f8e6", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#00B900", fontSize: "20px" }}>💸</div>
+            <span style={{ fontSize: "14px", fontWeight: 600, color: "#333" }}>รับ/โอน BX</span>
+          </button>
+          <Link href="/marketplace" style={{ flex: 1, textDecoration: "none" }}>
+            <button style={{ width: "100%", backgroundColor: "#ffffff", border: "1px solid #eee", padding: "16px", borderRadius: "16px", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
+              <div style={{ width: 40, height: 40, backgroundColor: "#e6f8e6", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#00B900", fontSize: "20px" }}>🛍️</div>
+              <span style={{ fontSize: "14px", fontWeight: 600, color: "#333" }}>ตลาด (Market)</span>
+            </button>
+          </Link>
+        </div>
+        
+        <Link href="/seller/dashboard" style={{ textDecoration: "none" }}>
+          <button style={{ width: "100%", backgroundColor: "#ffffff", border: "1px solid #eee", padding: "16px", borderRadius: "16px", display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
+            <div style={{ width: 32, height: 32, backgroundColor: "#fff8e6", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#f59f00", fontSize: "16px" }}>🏪</div>
+            <span style={{ fontSize: "14px", fontWeight: 600, color: "#333" }}>จัดการร้านค้า / ลงขายสินค้า</span>
           </button>
         </Link>
       </div>
