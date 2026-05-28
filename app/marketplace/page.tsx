@@ -75,9 +75,11 @@ export default function Marketplace() {
             </div>
 
             {/* Action Button */}
-            <button style={{ width: "100%", marginTop: "16px", padding: "12px", backgroundColor: "#1a1a1a", color: "white", border: "none", borderRadius: "8px", fontWeight: 600, fontSize: "14px", cursor: "pointer" }}>
-              ติดต่อซื้อ / จ่ายเงิน
-            </button>
+            <Link href="/checkout" style={{ display: 'block', width: "100%", marginTop: "16px", textDecoration: 'none' }}>
+              <button style={{ width: "100%", padding: "12px", backgroundColor: "#1a1a1a", color: "white", border: "none", borderRadius: "8px", fontWeight: 600, fontSize: "14px", cursor: "pointer" }}>
+                ติดต่อซื้อ / จ่ายเงิน
+              </button>
+            </Link>
 
           </div>
         ))}
