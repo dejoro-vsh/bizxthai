@@ -21,11 +21,18 @@ export default async function SellerDashboard() {
           <Link href="/" style={{ textDecoration: "none", color: "#333", fontSize: "24px" }}>←</Link>
           <h1 style={{ margin: 0, fontSize: "20px", fontWeight: 700 }}>จัดการสินค้าของฉัน</h1>
         </div>
-        <Link href="/seller/create">
-          <button style={{ backgroundColor: "#00B900", color: "white", border: "none", padding: "8px 16px", borderRadius: "8px", fontWeight: 600, cursor: "pointer" }}>
-            + ลงสินค้าใหม่
-          </button>
-        </Link>
+        <div style={{ display: "flex", gap: "12px" }}>
+          <Link href="/seller/network">
+            <button style={{ backgroundColor: "#4B5563", color: "white", border: "none", padding: "8px 16px", borderRadius: "8px", fontWeight: 600, cursor: "pointer" }}>
+              👥 ผังสายงาน
+            </button>
+          </Link>
+          <Link href="/seller/create">
+            <button style={{ backgroundColor: "#00B900", color: "white", border: "none", padding: "8px 16px", borderRadius: "8px", fontWeight: 600, cursor: "pointer" }}>
+              + ลงสินค้าใหม่
+            </button>
+          </Link>
+        </div>
       </div>
 
       {deals.length === 0 ? (
