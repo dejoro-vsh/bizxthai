@@ -6,18 +6,18 @@ import { useRouter } from "next/navigation";
 
 // 1. Initial Mock Data (Width and Depth)
 const initialUsers = {
-  "user_A": { id: "user_A", name: "Top Upline (คุณ)", parent_id: null, personal_volume: 20000, group_volume: 60000, current_rate: 0.015, earned: 0 },
+  "user_A": { id: "user_A", name: "Top Upline (คุณ)", parent_id: null, personal_volume: 20000, group_volume: 60000, current_rate: 0.015, earned_personal: 0, earned_group: 0 },
   
   // Leg 1 (Deep - 4 levels under A)
-  "user_B": { id: "user_B", name: "นาย B (Leg 1 - ชั้น 1)", parent_id: "user_A", personal_volume: 15000, group_volume: 25000, current_rate: 0.008, earned: 0 },
-  "user_C": { id: "user_C", name: "นาย C (ชั้น 2)", parent_id: "user_B", personal_volume: 5000, group_volume: 10000, current_rate: 0.003, earned: 0 },
-  "user_D": { id: "user_D", name: "นาย D (ชั้น 3)", parent_id: "user_C", personal_volume: 5000, group_volume: 5000, current_rate: 0.001, earned: 0 },
-  "user_E": { id: "user_E", name: "นาย E (ชั้น 4 - น้องใหม่สุด)", parent_id: "user_D", personal_volume: 0, group_volume: 0, current_rate: 0.001, earned: 0 },
+  "user_B": { id: "user_B", name: "นาย B (Leg 1 - ชั้น 1)", parent_id: "user_A", personal_volume: 15000, group_volume: 25000, current_rate: 0.008, earned_personal: 0, earned_group: 0 },
+  "user_C": { id: "user_C", name: "นาย C (ชั้น 2)", parent_id: "user_B", personal_volume: 5000, group_volume: 10000, current_rate: 0.003, earned_personal: 0, earned_group: 0 },
+  "user_D": { id: "user_D", name: "นาย D (ชั้น 3)", parent_id: "user_C", personal_volume: 5000, group_volume: 5000, current_rate: 0.001, earned_personal: 0, earned_group: 0 },
+  "user_E": { id: "user_E", name: "นาย E (ชั้น 4 - น้องใหม่สุด)", parent_id: "user_D", personal_volume: 0, group_volume: 0, current_rate: 0.001, earned_personal: 0, earned_group: 0 },
   
   // Leg 2, 3, 4 (Direct width)
-  "user_F": { id: "user_F", name: "นาย F (Leg 2)", parent_id: "user_A", personal_volume: 10000, group_volume: 10000, current_rate: 0.003, earned: 0 },
-  "user_G": { id: "user_G", name: "นาย G (Leg 3)", parent_id: "user_A", personal_volume: 5000, group_volume: 5000, current_rate: 0.001, earned: 0 },
-  "user_H": { id: "user_H", name: "นาย H (Leg 4 - เพิ่งสมัคร)", parent_id: "user_A", personal_volume: 0, group_volume: 0, current_rate: 0.001, earned: 0 },
+  "user_F": { id: "user_F", name: "นาย F (Leg 2)", parent_id: "user_A", personal_volume: 10000, group_volume: 10000, current_rate: 0.003, earned_personal: 0, earned_group: 0 },
+  "user_G": { id: "user_G", name: "นาย G (Leg 3)", parent_id: "user_A", personal_volume: 5000, group_volume: 5000, current_rate: 0.001, earned_personal: 0, earned_group: 0 },
+  "user_H": { id: "user_H", name: "นาย H (Leg 4 - เพิ่งสมัคร)", parent_id: "user_A", personal_volume: 0, group_volume: 0, current_rate: 0.001, earned_personal: 0, earned_group: 0 },
 };
 
 function getRateForVolume(volume: number): number {
@@ -114,7 +114,7 @@ export default function SimulatorClient({
     
     // Buyer also gets Personal Rebate based on their own Tier Rate
     const personalRebate = totalPurchase * buyerRate;
-    newUsers[buyerId].earned += (personalRebate + cashback);
+    newUsers[buyerId].earned_personal += (personalRebate + cashback);
     let rateToSubtract = buyerRate;
     let totalCommissionMinted = personalRebate;
     
@@ -145,7 +145,7 @@ export default function SimulatorClient({
 
       if (diffRate > 0) {
         const payout = totalPurchase * diffRate;
-        referrer.earned += payout;
+        referrer.earned_group += payout;
         totalCommissionMinted += payout;
         
         addLog(`✨ ${referrer.name} มียอดใหม่ ${referrer.group_volume.toLocaleString()} (เรท ${(newRate*100).toFixed(1)}%)`, 'info');
@@ -191,17 +191,26 @@ export default function SimulatorClient({
           transition: "all 0.3s ease",
           position: "relative"
         }}>
-          {node.earned > 0 && (
-            <div style={{
-              position: "absolute", top: "-10px", right: "-10px",
-              backgroundColor: "#10B981", color: "white", padding: "4px 12px",
-              borderRadius: "20px", fontWeight: "bold", fontSize: "14px",
-              boxShadow: "0 4px 6px rgba(0,0,0,0.3)",
-              animation: "bounce 0.5s ease"
-            }}>
-              +{node.earned.toLocaleString()} BX
-            </div>
-          )}
+          <div style={{ position: "absolute", top: "-12px", right: "-10px", display: "flex", gap: "6px" }}>
+            {node.earned_personal > 0 && (
+              <div style={{
+                backgroundColor: "#10B981", color: "white", padding: "4px 10px",
+                borderRadius: "20px", fontWeight: "bold", fontSize: "12px",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.3)", animation: "bounce 0.5s ease"
+              }}>
+                +{node.earned_personal.toLocaleString()} BX (ส่วนตัว)
+              </div>
+            )}
+            {node.earned_group > 0 && (
+              <div style={{
+                backgroundColor: "#FBBF24", color: "#111827", padding: "4px 10px",
+                borderRadius: "20px", fontWeight: "bold", fontSize: "12px",
+                boxShadow: "0 4px 6px rgba(0,0,0,0.3)", animation: "bounce 0.5s ease"
+              }}>
+                +{node.earned_group.toLocaleString()} BX (กลุ่ม)
+              </div>
+            )}
+          </div>
           <h4 style={{ margin: "0 0 8px 0", fontSize: "16px", color: "#F3F4F6", display: "flex", alignItems: "center", gap: "8px" }}>
             {node.name}
           </h4>
