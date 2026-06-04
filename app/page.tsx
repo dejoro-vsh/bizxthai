@@ -1,90 +1,161 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import liff from "@line/liff";
-import Link from "next/link";
+import { signIn } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 
-export default function Dashboard() {
-  const [liffLoaded, setLiffLoaded] = useState(false);
-  const [profile, setProfile] = useState<{ displayName: string; userId: string; pictureUrl?: string } | null>(null);
+export default function LandingPage() {
+  const searchParams = useSearchParams();
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    const liffId = process.env.NEXT_PUBLIC_LIFF_ID || "MockLiffId";
-    if (liffId === "MockLiffId") {
-      setLiffLoaded(true);
-      // Mock Profile for design preview
-      setProfile({ displayName: "Nu Creator", userId: "U12345", pictureUrl: "https://i.pravatar.cc/150?img=11" });
-      return;
+    setIsClient(true);
+    // Capture Referral Code from URL
+    const ref = searchParams.get("ref");
+    if (ref) {
+      // Store ref code in cookie so the server-side NextAuth callback can read it
+      document.cookie = `bizxthai_ref_code=${ref}; path=/; max-age=86400`; // 24 hours
+      localStorage.setItem("bizxthai_ref_code", ref); // backup
     }
+  }, [searchParams]);
 
-    liff.init({ liffId }).then(() => {
-        setLiffLoaded(true);
-        if (liff.isLoggedIn()) {
-          liff.getProfile().then((p) => setProfile(p as any));
-        }
-      }).catch(console.error);
-  }, []);
+  const handleLogin = () => {
+    // Start NextAuth login flow
+    signIn("line", { callbackUrl: "/dashboard" });
+  };
+
+  if (!isClient) return null; // Avoid hydration mismatch
 
   return (
-    <div style={{ backgroundColor: "#f8f9fa", minHeight: "100vh", paddingBottom: "20px" }}>
-      {/* Header Area */}
-      <div style={{ backgroundColor: "#ffffff", padding: "30px 20px 20px", borderBottomLeftRadius: "24px", borderBottomRightRadius: "24px", boxShadow: "0 4px 20px rgba(0,0,0,0.03)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: "24px", color: "#1a1a1a", fontWeight: 700 }}>biz<span style={{color: "#00B900"}}>x</span>thai</h1>
-            <p style={{ margin: 0, fontSize: "12px", color: "#888" }}>B2B Liquidity Ecosystem</p>
-          </div>
-          {profile?.pictureUrl && (
-            <img src={profile.pictureUrl} alt="avatar" style={{ width: 44, height: 44, borderRadius: "50%", border: "2px solid #00B900" }} />
-          )}
+    <div style={{ backgroundColor: "#ffffff", minHeight: "100vh", fontFamily: "sans-serif", color: "#333" }}>
+      {/* Navigation / Header */}
+      <header style={{ 
+        padding: "20px 24px", 
+        display: "flex", 
+        justifyContent: "space-between", 
+        alignItems: "center",
+        borderBottom: "1px solid #f0f0f0",
+        position: "sticky",
+        top: 0,
+        backgroundColor: "rgba(255, 255, 255, 0.9)",
+        backdropFilter: "blur(10px)",
+        zIndex: 100
+      }}>
+        <div style={{ fontSize: "24px", fontWeight: 800, color: "#111827", letterSpacing: "-0.5px" }}>
+          biz<span style={{ color: "#10B981" }}>x</span>thai
         </div>
+        <button 
+          onClick={handleLogin}
+          style={{ 
+            backgroundColor: "#10B981", 
+            color: "white", 
+            border: "none", 
+            padding: "8px 20px", 
+            borderRadius: "20px", 
+            fontWeight: 600, 
+            fontSize: "14px",
+            cursor: "pointer",
+            boxShadow: "0 4px 6px rgba(16, 185, 129, 0.2)"
+          }}>
+          เข้าสู่ระบบ
+        </button>
+      </header>
 
-        {/* Balance Card */}
-        <div style={{ background: "linear-gradient(135deg, #00B900 0%, #009900 100%)", borderRadius: "16px", padding: "24px", color: "white", boxShadow: "0 10px 20px rgba(0, 185, 0, 0.2)" }}>
-          <p style={{ margin: 0, fontSize: "14px", opacity: 0.9 }}>ยอดคงเหลือ (Available Balance)</p>
-          <div style={{ display: "flex", alignItems: "baseline", marginTop: "8px" }}>
-            <h2 style={{ margin: 0, fontSize: "42px", fontWeight: 800, letterSpacing: "-1px" }}>0.00</h2>
-            <span style={{ fontSize: "18px", marginLeft: "8px", fontWeight: 600 }}>BX</span>
-          </div>
-          <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid rgba(255,255,255,0.2)", display: "flex", justifyContent: "space-between" }}>
-            <span style={{ fontSize: "12px", opacity: 0.9 }}>วงเงิน OD: 0.00 BX</span>
-            <span style={{ fontSize: "12px", fontWeight: 600 }}>Normal Tier</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "24px 20px" }}>
-        <div style={{ display: "flex", gap: "12px" }}>
-          <button style={{ flex: 1, backgroundColor: "#ffffff", border: "1px solid #eee", padding: "16px", borderRadius: "16px", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
-            <div style={{ width: 40, height: 40, backgroundColor: "#e6f8e6", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#00B900", fontSize: "20px" }}>💸</div>
-            <span style={{ fontSize: "14px", fontWeight: 600, color: "#333" }}>รับ/โอน BX</span>
-          </button>
-          <Link href="/marketplace" style={{ flex: 1, textDecoration: "none" }}>
-            <button style={{ width: "100%", backgroundColor: "#ffffff", border: "1px solid #eee", padding: "16px", borderRadius: "16px", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
-              <div style={{ width: 40, height: 40, backgroundColor: "#e6f8e6", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#00B900", fontSize: "20px" }}>🛍️</div>
-              <span style={{ fontSize: "14px", fontWeight: 600, color: "#333" }}>ตลาด (Market)</span>
-            </button>
-          </Link>
+      {/* Hero Section */}
+      <main style={{ padding: "40px 24px", maxWidth: "600px", margin: "0 auto", textAlign: "center" }}>
+        <div style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "8px",
+          backgroundColor: "#ECFDF5",
+          color: "#059669",
+          padding: "6px 12px",
+          borderRadius: "20px",
+          fontSize: "13px",
+          fontWeight: 600,
+          marginBottom: "24px"
+        }}>
+          <span style={{ display: "inline-block", width: "8px", height: "8px", backgroundColor: "#10B981", borderRadius: "50%" }}></span>
+          ระบบเครือข่าย B2B ที่ทันสมัยที่สุด
         </div>
         
-        <Link href="/seller/dashboard" style={{ textDecoration: "none" }}>
-          <button style={{ width: "100%", backgroundColor: "#ffffff", border: "1px solid #eee", padding: "16px", borderRadius: "16px", display: "flex", alignItems: "center", justifyContent: "center", gap: "12px", cursor: "pointer", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
-            <div style={{ width: 32, height: 32, backgroundColor: "#fff8e6", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", color: "#f59f00", fontSize: "16px" }}>🏪</div>
-            <span style={{ fontSize: "14px", fontWeight: 600, color: "#333" }}>จัดการร้านค้า / ลงขายสินค้า</span>
-          </button>
-        </Link>
-      </div>
+        <h1 style={{ fontSize: "36px", fontWeight: 800, lineHeight: 1.2, color: "#111827", marginBottom: "16px", letterSpacing: "-1px" }}>
+          พลิกโฉมธุรกิจของคุณ<br/>ด้วย <span style={{ color: "#10B981" }}>Hybrid Commerce</span>
+        </h1>
+        
+        <p style={{ fontSize: "16px", color: "#6B7280", lineHeight: 1.6, marginBottom: "40px" }}>
+          เชื่อมต่อการซื้อขายแบบ B2B เข้ากับระบบ MLM อย่างไร้รอยต่อ สะสมยอด แลกเปลี่ยนสินค้า และสร้างรายได้แบบอัตโนมัติ โดยไม่ต้องรักษายอด
+        </p>
 
-      {/* Recent Activity */}
-      <div style={{ padding: "0 20px" }}>
-        <h3 style={{ fontSize: "16px", color: "#1a1a1a", marginBottom: "16px" }}>รายการล่าสุด</h3>
-        <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", padding: "16px", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", padding: "20px 0", color: "#888", fontSize: "14px" }}>
-            ยังไม่มีรายการเคลื่อนไหว
+        {/* Feature Cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "16px", marginBottom: "40px", textAlign: "left" }}>
+          <div style={{ backgroundColor: "#F9FAFB", padding: "20px", borderRadius: "16px", border: "1px solid #F3F4F6", display: "flex", gap: "16px", alignItems: "flex-start" }}>
+            <div style={{ backgroundColor: "#D1FAE5", width: "48px", height: "48px", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px" }}>
+              🛒
+            </div>
+            <div>
+              <h3 style={{ fontSize: "16px", fontWeight: 700, margin: "0 0 4px 0", color: "#111827" }}>ซื้อขายคล่องตัว</h3>
+              <p style={{ margin: 0, fontSize: "14px", color: "#6B7280", lineHeight: 1.5 }}>รองรับการจ่ายเงินสดผสมแต้ม BX คืนกำไรให้ทุกคนทันที 5% ทุกการใช้จ่าย</p>
+            </div>
+          </div>
+
+          <div style={{ backgroundColor: "#F9FAFB", padding: "20px", borderRadius: "16px", border: "1px solid #F3F4F6", display: "flex", gap: "16px", alignItems: "flex-start" }}>
+            <div style={{ backgroundColor: "#DBEAFE", width: "48px", height: "48px", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px" }}>
+              📈
+            </div>
+            <div>
+              <h3 style={{ fontSize: "16px", fontWeight: 700, margin: "0 0 4px 0", color: "#111827" }}>ไม่ต้องรักษายอด</h3>
+              <p style={{ margin: 0, fontSize: "14px", color: "#6B7280", lineHeight: 1.5 }}>แค่ขยายสายงานและบริหารทีม ก็รับคอมมิชชันส่วนต่างได้สูงสุดถึง 2.5% ตลอดสาย</p>
+            </div>
+          </div>
+          
+          <div style={{ backgroundColor: "#F9FAFB", padding: "20px", borderRadius: "16px", border: "1px solid #F3F4F6", display: "flex", gap: "16px", alignItems: "flex-start" }}>
+            <div style={{ backgroundColor: "#FEF3C7", width: "48px", height: "48px", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px" }}>
+              ⚡
+            </div>
+            <div>
+              <h3 style={{ fontSize: "16px", fontWeight: 700, margin: "0 0 4px 0", color: "#111827" }}>ระบบคำนวณอัตโนมัติ</h3>
+              <p style={{ margin: 0, fontSize: "14px", color: "#6B7280", lineHeight: 1.5 }}>รวบยอดคำนวณทุกวันที่ 31 ตัดรอบแม่นยำ โปร่งใส ตรวจสอบได้ทุกธุรกรรม</p>
+            </div>
           </div>
         </div>
-      </div>
+
+        {/* Big CTA */}
+        <div style={{ backgroundColor: "#ffffff", padding: "24px", borderRadius: "24px", boxShadow: "0 10px 40px rgba(0,0,0,0.08)", border: "1px solid #f0f0f0" }}>
+          <h2 style={{ fontSize: "20px", fontWeight: 700, margin: "0 0 16px 0", color: "#111827" }}>พร้อมเริ่มต้นธุรกิจหรือยัง?</h2>
+          <button 
+            onClick={handleLogin}
+            style={{ 
+              width: "100%",
+              backgroundColor: "#06C755", // LINE Green
+              color: "white", 
+              border: "none", 
+              padding: "16px", 
+              borderRadius: "16px", 
+              fontWeight: 700, 
+              fontSize: "16px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "12px",
+              boxShadow: "0 4px 12px rgba(6, 199, 85, 0.3)",
+              transition: "transform 0.2s"
+            }}>
+            <span style={{ fontSize: "24px", backgroundColor: "white", color: "#06C755", width: "28px", height: "28px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900 }}>L</span>
+            เข้าสู่ระบบด้วย LINE
+          </button>
+          <p style={{ margin: "16px 0 0 0", fontSize: "13px", color: "#9CA3AF" }}>
+            ระบบจะสร้างบัญชีและต่อสายงานให้อัตโนมัติ ไม่ต้องตั้งรหัสผ่าน
+          </p>
+        </div>
+      </main>
+      
+      {/* Footer */}
+      <footer style={{ textAlign: "center", padding: "40px 20px", borderTop: "1px solid #f0f0f0", color: "#9CA3AF", fontSize: "14px" }}>
+        © 2026 BizXThai Platform. All rights reserved.
+      </footer>
     </div>
   );
 }

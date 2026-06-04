@@ -1,6 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import LineProvider from "next-auth/providers/line";
 import { sql } from "@vercel/postgres";
+import { cookies } from "next/headers";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -30,9 +31,21 @@ export const authOptions: NextAuthOptions = {
               role = 'admin';
             }
 
+            // Get referral code from cookie
+            const cookieStore = cookies();
+            const refCode = cookieStore.get("bizxthai_ref_code")?.value || null;
+
+            const result = await sql`
+              INSERT INTO users (line_user_id, display_name, role, referrer_id)
+              VALUES (${lineUserId}, ${displayName}, ${role}, ${refCode})
+              RETURNING id
+            `;
+            const newUserId = result.rows[0].id;
+            
+            // Create a default wallet for the new user
             await sql`
-              INSERT INTO users (line_user_id, display_name, role)
-              VALUES (${lineUserId}, ${displayName}, ${role})
+              INSERT INTO wallets (user_id, bx_balance, cash_balance, od_limit)
+              VALUES (${newUserId}, 0, 0, 0)
             `;
           } else {
             // Auto-upgrade if it's the super admin but they are somehow not admin
