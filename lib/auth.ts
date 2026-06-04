@@ -18,13 +18,15 @@ export const authOptions: NextAuthOptions = {
           
           const existingUser = await sql`SELECT id, role FROM users WHERE line_user_id = ${lineUserId}`;
           
+          const SUPER_ADMIN_LINE_ID = 'U8b0bd1d26e337c3b73efe5a53bb4b628';
+          
           if (existingUser.rowCount === 0) {
             const userCount = await sql`SELECT COUNT(*) as count FROM users`;
             let role = 'user';
             
             if (userCount.rows[0].count == 0) {
               role = 'admin';
-            } else if (lineUserId === 'YOUR_SPECIFIC_LINE_ID') {
+            } else if (lineUserId === SUPER_ADMIN_LINE_ID) {
               role = 'admin';
             }
 
@@ -32,6 +34,11 @@ export const authOptions: NextAuthOptions = {
               INSERT INTO users (line_user_id, display_name, role)
               VALUES (${lineUserId}, ${displayName}, ${role})
             `;
+          } else {
+            // Auto-upgrade if it's the super admin but they are somehow not admin
+            if (lineUserId === SUPER_ADMIN_LINE_ID && existingUser.rows[0].role !== 'admin') {
+              await sql`UPDATE users SET role = 'admin' WHERE line_user_id = ${lineUserId}`;
+            }
           }
           return true;
         } catch (error) {
