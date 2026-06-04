@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 // 1. Initial Mock Data (Width and Depth)
 const initialUsers = {
@@ -26,12 +28,49 @@ function getRateForVolume(volume: number): number {
 }
 
 export default function SimulatorPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
   const [users, setUsers] = useState<Record<string, any>>(JSON.parse(JSON.stringify(initialUsers)));
   const [buyerId, setBuyerId] = useState("user_D");
   const [cashAmount, setCashAmount] = useState<number>(5000);
   const [bxAmount, setBxAmount] = useState<number>(5000);
   const [logs, setLogs] = useState<any[]>([]);
   const [isSimulating, setIsSimulating] = useState(false);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, router]);
+
+  if (status === "loading") {
+    return <div style={{ minHeight: "100vh", backgroundColor: "#111827", color: "white", padding: "40px", textAlign: "center" }}>กำลังโหลด...</div>;
+  }
+
+  const userRole = (session?.user as any)?.role || 'user';
+  const lineUserId = (session?.user as any)?.lineUserId || 'unknown';
+
+  if (userRole !== 'admin') {
+    return (
+      <div style={{ minHeight: "100vh", backgroundColor: "#111827", color: "white", padding: "40px", textAlign: "center" }}>
+        <h2>🚫 ไม่มีสิทธิ์เข้าถึง (Access Denied)</h2>
+        <p>คุณต้องเป็นผู้ดูแลระบบ (Admin) เท่านั้นถึงจะเข้าหน้านี้ได้</p>
+        <div style={{ margin: "20px auto", padding: "20px", backgroundColor: "#1F2937", borderRadius: "10px", maxWidth: "500px" }}>
+          <p style={{ color: "#FBBF24" }}>รหัสผู้ใช้งานของคุณ (LINE User ID) คือ:</p>
+          <code style={{ fontSize: "18px", userSelect: "all", backgroundColor: "black", padding: "10px", borderRadius: "5px", display: "block" }}>
+            {lineUserId}
+          </code>
+          <p style={{ marginTop: "20px", fontSize: "14px", color: "#9CA3AF" }}>กรุณาคัดลอกรหัสนี้ส่งให้ทีมงาน เพื่อเปิดสิทธิ์ใช้งานแอดมินครับ</p>
+        </div>
+        <Link href="/seller/dashboard">
+          <button style={{ backgroundColor: "#4B5563", color: "white", border: "none", padding: "10px 20px", borderRadius: "8px", cursor: "pointer" }}>
+            กลับหน้าหลัก
+          </button>
+        </Link>
+      </div>
+    );
+  }
 
   const resetSimulation = () => {
     setUsers(JSON.parse(JSON.stringify(initialUsers)));

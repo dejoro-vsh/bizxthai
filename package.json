@@ -17,7 +17,8 @@
     "@line/liff": "^2.23.2",
     "stripe": "^15.8.0",
     "@stripe/stripe-js": "^4.0.0",
-    "@stripe/react-stripe-js": "^2.7.1"
+    "@stripe/react-stripe-js": "^2.7.1",
+    "next-auth": "^4.24.7"
   },
   "devDependencies": {
     "typescript": "^5",
