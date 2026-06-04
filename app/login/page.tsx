@@ -1,8 +1,12 @@
 "use client";
 
-import { signIn } from "next-auth/react";
-
 export default function LoginPage() {
+  const handleLogin = async () => {
+    // Dynamically import to prevent NextAuth module from crashing during SSG build time
+    const { signIn } = await import("next-auth/react");
+    signIn("line", { callbackUrl: "/simulator" });
+  };
+
   return (
     <div style={{ 
       minHeight: "100vh", 
@@ -27,7 +31,7 @@ export default function LoginPage() {
         </p>
         
         <button 
-          onClick={() => signIn("line", { callbackUrl: "/simulator" })}
+          onClick={handleLogin}
           style={{ 
             width: "100%", 
             backgroundColor: "#00B900", 
