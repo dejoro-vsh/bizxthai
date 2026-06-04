@@ -6,16 +6,18 @@ import { useRouter } from "next/navigation";
 
 // 1. Initial Mock Data (Width and Depth)
 const initialUsers = {
-  "user_A": { id: "user_A", name: "Top Upline (คุณ)", parent_id: null, group_volume: 80000, current_rate: 0.015, earned: 0 },
-  // Leg 1 (Deep)
-  "user_B": { id: "user_B", name: "นาย B (Leg 1)", parent_id: "user_A", group_volume: 45000, current_rate: 0.008, earned: 0 },
-  "user_C": { id: "user_C", name: "นาย C", parent_id: "user_B", group_volume: 18000, current_rate: 0.003, earned: 0 },
-  "user_D": { id: "user_D", name: "นาย D (น้องใหม่สุด)", parent_id: "user_C", group_volume: 0, current_rate: 0.001, earned: 0 },
-  // Leg 2 (Medium)
-  "user_E": { id: "user_E", name: "นาย E (Leg 2)", parent_id: "user_A", group_volume: 25000, current_rate: 0.008, earned: 0 },
-  "user_F": { id: "user_F", name: "นาย F", parent_id: "user_E", group_volume: 5000, current_rate: 0.001, earned: 0 },
-  // Leg 3 (Wide)
-  "user_G": { id: "user_G", name: "นาย G (Leg 3 เพิ่งสมัคร)", parent_id: "user_A", group_volume: 0, current_rate: 0.001, earned: 0 },
+  "user_A": { id: "user_A", name: "Top Upline (คุณ)", parent_id: null, personal_volume: 20000, group_volume: 60000, current_rate: 0.015, earned: 0 },
+  
+  // Leg 1 (Deep - 4 levels under A)
+  "user_B": { id: "user_B", name: "นาย B (Leg 1 - ชั้น 1)", parent_id: "user_A", personal_volume: 15000, group_volume: 25000, current_rate: 0.008, earned: 0 },
+  "user_C": { id: "user_C", name: "นาย C (ชั้น 2)", parent_id: "user_B", personal_volume: 5000, group_volume: 10000, current_rate: 0.003, earned: 0 },
+  "user_D": { id: "user_D", name: "นาย D (ชั้น 3)", parent_id: "user_C", personal_volume: 5000, group_volume: 5000, current_rate: 0.001, earned: 0 },
+  "user_E": { id: "user_E", name: "นาย E (ชั้น 4 - น้องใหม่สุด)", parent_id: "user_D", personal_volume: 0, group_volume: 0, current_rate: 0.001, earned: 0 },
+  
+  // Leg 2, 3, 4 (Direct width)
+  "user_F": { id: "user_F", name: "นาย F (Leg 2)", parent_id: "user_A", personal_volume: 10000, group_volume: 10000, current_rate: 0.003, earned: 0 },
+  "user_G": { id: "user_G", name: "นาย G (Leg 3)", parent_id: "user_A", personal_volume: 5000, group_volume: 5000, current_rate: 0.001, earned: 0 },
+  "user_H": { id: "user_H", name: "นาย H (Leg 4 - เพิ่งสมัคร)", parent_id: "user_A", personal_volume: 0, group_volume: 0, current_rate: 0.001, earned: 0 },
 };
 
 function getRateForVolume(volume: number): number {
@@ -95,7 +97,8 @@ export default function SimulatorClient({
     // Deep copy users
     const newUsers = { ...users };
 
-    // 1. Update buyer's volume (Volume is still usually total price, but we will clarify this)
+    // 1. Update buyer's volume
+    newUsers[buyerId].personal_volume += totalPurchase;
     newUsers[buyerId].group_volume += totalPurchase;
     const buyerRate = getRateForVolume(newUsers[buyerId].group_volume);
     newUsers[buyerId].current_rate = buyerRate;
@@ -112,8 +115,8 @@ export default function SimulatorClient({
     // Buyer also gets Personal Rebate based on their own Tier Rate
     const personalRebate = totalPurchase * buyerRate;
     newUsers[buyerId].earned += personalRebate;
-    let totalCommissionMinted = personalRebate;
     let rateToSubtract = buyerRate;
+    let totalCommissionMinted = personalRebate;
     
     if (personalRebate > 0) {
       addLog(`⭐ ${newUsers[buyerId].name} ได้รับคอมมิชชันส่วนตัวตามตำแหน่ง ${(buyerRate*100).toFixed(1)}%: ${personalRebate.toLocaleString()} BX`, 'success');
@@ -131,7 +134,7 @@ export default function SimulatorClient({
       addLog(`\n⬆️ ดันยอดไปที่อัปไลน์: ${referrer.name}...`, 'info');
       await delay(800);
 
-      // Update their volume
+      // Update their group volume (Personal volume doesn't increase for uplines)
       referrer.group_volume += totalPurchase;
       const newRate = getRateForVolume(referrer.group_volume);
       referrer.current_rate = newRate;
@@ -202,9 +205,13 @@ export default function SimulatorClient({
           <h4 style={{ margin: "0 0 8px 0", fontSize: "16px", color: "#F3F4F6", display: "flex", alignItems: "center", gap: "8px" }}>
             {node.name}
           </h4>
-          <div style={{ display: "flex", gap: "20px", fontSize: "14px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", fontSize: "12px" }}>
             <div>
-              <p style={{ margin: 0, color: "#9CA3AF" }}>ยอดกลุ่มปัจจุบัน</p>
+              <p style={{ margin: 0, color: "#9CA3AF" }}>ยอดส่วนตัว</p>
+              <p style={{ margin: 0, color: "#34D399", fontWeight: "bold" }}>{node.personal_volume.toLocaleString()} ฿</p>
+            </div>
+            <div>
+              <p style={{ margin: 0, color: "#9CA3AF" }}>ยอดกลุ่ม</p>
               <p style={{ margin: 0, color: "#FBBF24", fontWeight: "bold" }}>{node.group_volume.toLocaleString()} ฿</p>
             </div>
             <div>
