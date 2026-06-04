@@ -66,17 +66,20 @@ export default function SimulatorClient({
     );
   }
 
+  const [isMonthEnded, setIsMonthEnded] = useState(false);
+
   const resetSimulation = () => {
     setUsers(JSON.parse(JSON.stringify(initialUsers)));
     setLogs([]);
+    setIsMonthEnded(false);
   };
 
   const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
-  const runSimulation = async () => {
-    if (isSimulating) return;
+  // Action 1: Add Purchase (Accumulate Volume during the month)
+  const addPurchase = async () => {
+    if (isSimulating || isMonthEnded) return;
     setIsSimulating(true);
-    setLogs([]);
 
     const totalPurchase = cashAmount + bxAmount;
     if (totalPurchase <= 0) {
@@ -88,81 +91,108 @@ export default function SimulatorClient({
     let currentLogs: any[] = [];
     const addLog = (msg: string, type: 'info' | 'success' | 'warning' = 'info') => {
       currentLogs.push({ id: Date.now() + Math.random(), msg, type });
-      setLogs([...currentLogs]);
+      setLogs((prevLogs) => [...prevLogs, ...currentLogs]);
+      currentLogs = [];
     };
 
-    addLog(`🛒 เริ่มต้นการซื้อ: ผู้ซื้อคือ ${users[buyerId].name} ยอดรวม ${totalPurchase.toLocaleString()} บาท (เงินสด ${cashAmount}, BX ${bxAmount})`, 'info');
-    await delay(800);
+    addLog(`🛒 บันทึกการซื้อ: ${users[buyerId].name} ยอดรวม ${totalPurchase.toLocaleString()} บาท (เงินสด ${cashAmount}, BX ${bxAmount})`, 'info');
+    await delay(500);
 
-    // Deep copy users
     const newUsers = { ...users };
 
-    // 1. Update buyer's volume
+    // Update buyer's volume
     newUsers[buyerId].personal_volume += totalPurchase;
     newUsers[buyerId].group_volume += totalPurchase;
-    const buyerRate = getRateForVolume(newUsers[buyerId].group_volume);
-    newUsers[buyerId].current_rate = buyerRate;
+    newUsers[buyerId].current_rate = getRateForVolume(newUsers[buyerId].group_volume);
     
-    // Buyer gets 5% Cashback ONLY from Cash payment!
+    // Instant Retail Cashback
     let cashback = 0;
     if (cashAmount > 0) {
       cashback = cashAmount * 0.05;
-      addLog(`🎁 ระบบจ่าย Cashback 5% จากยอดเงินสด (${cashAmount.toLocaleString()} บาท): ${cashback.toLocaleString()} BX`, 'success');
-    } else {
-      addLog(`ℹ️ ซื้อด้วย BX 100% จะไม่ได้รับ Cashback 5%`, 'warning');
+      newUsers[buyerId].earned_personal += cashback;
+      addLog(`🎁 ระบบจ่าย Cashback ทันที 5% จากยอดเงินสด: ${cashback.toLocaleString()} BX`, 'success');
     }
-    
-    // Buyer also gets Personal Rebate based on their own Tier Rate
-    const personalRebate = totalPurchase * buyerRate;
-    newUsers[buyerId].earned_personal += (personalRebate + cashback);
-    let rateToSubtract = buyerRate;
-    let totalCommissionMinted = personalRebate;
-    
-    if (personalRebate > 0) {
-      addLog(`⭐ ${newUsers[buyerId].name} ได้รับคอมมิชชันส่วนตัวตามตำแหน่ง ${(buyerRate*100).toFixed(1)}%: ${personalRebate.toLocaleString()} BX`, 'success');
-    }
-    await delay(800);
+    await delay(500);
 
     setUsers({ ...newUsers });
 
+    // Ripple the group volume up the tree
     let currentReferrerId = newUsers[buyerId].parent_id;
-
     while (currentReferrerId) {
       const referrer = newUsers[currentReferrerId];
       if (!referrer) break;
 
-      addLog(`\n⬆️ ดันยอดไปที่อัปไลน์: ${referrer.name}...`, 'info');
-      await delay(800);
-
-      // Update their group volume (Personal volume doesn't increase for uplines)
       referrer.group_volume += totalPurchase;
-      const newRate = getRateForVolume(referrer.group_volume);
-      referrer.current_rate = newRate;
+      referrer.current_rate = getRateForVolume(referrer.group_volume);
 
-      // Calculate differential
-      let diffRate = newRate - rateToSubtract;
-      diffRate = Math.round(diffRate * 10000) / 10000;
-
-      if (diffRate > 0) {
-        const payout = totalPurchase * diffRate;
-        referrer.earned_group += payout;
-        totalCommissionMinted += payout;
-        
-        addLog(`✨ ${referrer.name} มียอดใหม่ ${referrer.group_volume.toLocaleString()} (เรท ${(newRate*100).toFixed(1)}%)`, 'info');
-        addLog(`💰 ได้รับส่วนต่าง ${(diffRate*100).toFixed(1)}% เป็นแต้มจำนวน ${payout.toLocaleString()} BX`, 'success');
-        rateToSubtract = newRate;
-      } else {
-        addLog(`⚠️ ${referrer.name} มียอดใหม่ ${referrer.group_volume.toLocaleString()} (เรท ${(newRate*100).toFixed(1)}%)`, 'info');
-        addLog(`❌ ไม่ได้รับส่วนต่าง (เรทชนกัน หรือน้อยกว่าดาวน์ไลน์)`, 'warning');
-      }
-
+      addLog(`⬆️ อัปเดตยอดกลุ่มให้ ${referrer.name} -> ยอดใหม่ ${referrer.group_volume.toLocaleString()} (เรท ${(referrer.current_rate*100).toFixed(1)}%)`, 'info');
+      
       setUsers({ ...newUsers });
-      await delay(1200);
+      await delay(500);
 
       currentReferrerId = referrer.parent_id;
     }
 
-    addLog(`\n✅ จบการจำลอง! ระบบสร้างแต้มคอมมิชชันรวม: ${totalCommissionMinted.toLocaleString()} BX (คิดเป็น ${(totalCommissionMinted/totalPurchase*100).toFixed(2)}% ของยอดรวม)`, 'success');
+    setIsSimulating(false);
+  };
+
+  // Action 2: End of Month Calculation (31st)
+  const calculateMonthEnd = async () => {
+    if (isSimulating || isMonthEnded) return;
+    setIsSimulating(true);
+    setIsMonthEnded(true);
+    
+    let currentLogs: any[] = [];
+    const addLog = (msg: string, type: 'info' | 'success' | 'warning' = 'info') => {
+      currentLogs.push({ id: Date.now() + Math.random(), msg, type });
+      setLogs((prevLogs) => [...prevLogs, ...currentLogs]);
+      currentLogs = [];
+    };
+
+    addLog(`\n📅 เริ่มต้นการคำนวณปิดยอดวันที่ 31...`, 'info');
+    await delay(1000);
+
+    const newUsers = { ...users };
+    let totalSystemPayout = 0;
+
+    // Iterate through every user to calculate their Month End Commissions
+    for (const userId of Object.keys(newUsers)) {
+      const user = newUsers[userId];
+      let userTotalGained = 0;
+
+      // 1. Calculate Personal Rebate
+      if (user.personal_volume > 0 && user.current_rate > 0) {
+        const personalRebate = user.personal_volume * user.current_rate;
+        user.earned_personal += personalRebate;
+        userTotalGained += personalRebate;
+        totalSystemPayout += personalRebate;
+        addLog(`⭐ ${user.name} รับคอมฯ ส่วนตัว ${(user.current_rate*100).toFixed(1)}% จากยอด ${user.personal_volume.toLocaleString()} = ${personalRebate.toLocaleString()} BX`, 'success');
+        await delay(300);
+      }
+
+      // 2. Calculate Group Differential Commission from DIRECT downlines
+      const directDownlines = Object.values(newUsers).filter(u => u.parent_id === userId);
+      for (const downline of directDownlines) {
+        const diffRate = user.current_rate - downline.current_rate;
+        const safeDiffRate = Math.round(diffRate * 10000) / 10000;
+
+        if (safeDiffRate > 0 && downline.group_volume > 0) {
+          const groupCommission = downline.group_volume * safeDiffRate;
+          user.earned_group += groupCommission;
+          userTotalGained += groupCommission;
+          totalSystemPayout += groupCommission;
+          addLog(`💰 ${user.name} รับส่วนต่าง ${(safeDiffRate*100).toFixed(1)}% จากสาย ${downline.name} (ยอด ${downline.group_volume.toLocaleString()}) = ${groupCommission.toLocaleString()} BX`, 'success');
+          await delay(300);
+        } else if (downline.group_volume > 0) {
+          addLog(`⚠️ ${user.name} ไม่ได้ส่วนต่างจาก ${downline.name} (เรทชนกันที่ ${(user.current_rate*100).toFixed(1)}%)`, 'warning');
+          await delay(100);
+        }
+      }
+      
+      setUsers({ ...newUsers });
+    }
+
+    addLog(`\n✅ สรุปการคำนวณวันที่ 31 เสร็จสิ้น! ระบบจ่ายคอมมิชชันออกไปทั้งหมด: ${totalSystemPayout.toLocaleString()} BX`, 'success');
     setIsSimulating(false);
   };
 
@@ -288,20 +318,29 @@ export default function SimulatorClient({
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: "12px" }}>
+            <div style={{ display: "flex", gap: "12px", marginBottom: "12px" }}>
               <button 
-                onClick={runSimulation}
-                disabled={isSimulating}
-                style={{ flex: 1, backgroundColor: "#3B82F6", color: "white", border: "none", padding: "12px", borderRadius: "8px", fontWeight: "bold", cursor: isSimulating ? "not-allowed" : "pointer", opacity: isSimulating ? 0.7 : 1 }}
+                onClick={addPurchase}
+                disabled={isSimulating || isMonthEnded}
+                style={{ flex: 1, backgroundColor: "#3B82F6", color: "white", border: "none", padding: "12px", borderRadius: "8px", fontWeight: "bold", cursor: (isSimulating || isMonthEnded) ? "not-allowed" : "pointer", opacity: (isSimulating || isMonthEnded) ? 0.7 : 1 }}
               >
-                {isSimulating ? "กำลังจำลอง..." : "🚀 รันจำลองสถานการณ์"}
+                {isSimulating ? "กำลังอัปเดตยอด..." : "🛒 บันทึกการซื้อ (สะสมยอด)"}
               </button>
+              <button 
+                onClick={calculateMonthEnd}
+                disabled={isSimulating || isMonthEnded}
+                style={{ flex: 1, backgroundColor: "#10B981", color: "white", border: "none", padding: "12px", borderRadius: "8px", fontWeight: "bold", cursor: (isSimulating || isMonthEnded) ? "not-allowed" : "pointer", opacity: (isSimulating || isMonthEnded) ? 0.7 : 1 }}
+              >
+                {isMonthEnded ? "คำนวณแล้ว" : "📅 คำนวณรายได้วันที่ 31"}
+              </button>
+            </div>
+            <div style={{ display: "flex", gap: "12px" }}>
               <button 
                 onClick={resetSimulation}
                 disabled={isSimulating}
-                style={{ backgroundColor: "#4B5563", color: "white", border: "none", padding: "12px 20px", borderRadius: "8px", fontWeight: "bold", cursor: isSimulating ? "not-allowed" : "pointer" }}
+                style={{ width: "100%", backgroundColor: "#4B5563", color: "white", border: "none", padding: "12px 20px", borderRadius: "8px", fontWeight: "bold", cursor: isSimulating ? "not-allowed" : "pointer" }}
               >
-                รีเซ็ต
+                รีเซ็ตข้อมูลใหม่
               </button>
             </div>
           </div>
