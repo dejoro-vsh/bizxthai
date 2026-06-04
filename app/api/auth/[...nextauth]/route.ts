@@ -2,7 +2,7 @@ import NextAuth, { NextAuthOptions } from "next-auth";
 import LineProvider from "next-auth/providers/line";
 import { sql } from "@vercel/postgres";
 
-export const authOptions: NextAuthOptions = {
+const authOptions: NextAuthOptions = {
   providers: [
     LineProvider({
       clientId: process.env.LINE_CLIENT_ID || "",
