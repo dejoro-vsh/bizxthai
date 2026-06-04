@@ -22,6 +22,11 @@ export default async function SellerDashboard() {
           <h1 style={{ margin: 0, fontSize: "20px", fontWeight: 700 }}>จัดการสินค้าของฉัน</h1>
         </div>
         <div style={{ display: "flex", gap: "12px" }}>
+          <Link href="/simulator">
+            <button style={{ backgroundColor: "#3B82F6", color: "white", border: "none", padding: "8px 16px", borderRadius: "8px", fontWeight: 600, cursor: "pointer" }}>
+              🧪 เครื่องจำลอง MLM
+            </button>
+          </Link>
           <Link href="/seller/network">
             <button style={{ backgroundColor: "#4B5563", color: "white", border: "none", padding: "8px 16px", borderRadius: "8px", fontWeight: 600, cursor: "pointer" }}>
               👥 ผังสายงาน
