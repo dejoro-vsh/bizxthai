@@ -97,18 +97,27 @@ export default function SimulatorClient({
 
     // 1. Update buyer's volume
     newUsers[buyerId].group_volume += totalPurchase;
-    newUsers[buyerId].current_rate = getRateForVolume(newUsers[buyerId].group_volume);
+    const buyerRate = getRateForVolume(newUsers[buyerId].group_volume);
+    newUsers[buyerId].current_rate = buyerRate;
     
     // Buyer gets 5% Cashback (Mock)
     const cashback = totalPurchase * 0.05;
     addLog(`🎁 ระบบจ่าย Cashback 5% เข้ากระเป๋าผู้ซื้อ: ${cashback.toLocaleString()} BX`, 'success');
+    
+    // Buyer also gets Personal Rebate based on their own Tier Rate
+    const personalRebate = totalPurchase * buyerRate;
+    newUsers[buyerId].earned += personalRebate;
+    let totalCommissionMinted = personalRebate;
+    let rateToSubtract = buyerRate;
+    
+    if (personalRebate > 0) {
+      addLog(`⭐ ${newUsers[buyerId].name} ได้รับคอมมิชชันส่วนตัวตามตำแหน่ง ${(buyerRate*100).toFixed(1)}%: ${personalRebate.toLocaleString()} BX`, 'success');
+    }
     await delay(800);
 
     setUsers({ ...newUsers });
 
     let currentReferrerId = newUsers[buyerId].parent_id;
-    let rateToSubtract = 0.0;
-    let totalCommissionMinted = 0;
 
     while (currentReferrerId) {
       const referrer = newUsers[currentReferrerId];

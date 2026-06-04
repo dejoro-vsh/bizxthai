@@ -30,19 +30,65 @@ export async function POST(request: Request) {
     let currentReferrerId = currentUser.referrer_id;
     
     // Add the purchase_amount to the buyer's own monthly_group_volume (Personal Volume)
-    await sql`
+    const buyerVolumeQuery = await sql`
       INSERT INTO monthly_group_volume (user_id, month_year, personal_volume, group_volume)
       VALUES (${buyer_id}, ${currentMonthYear}, ${purchase_amount}, ${purchase_amount})
       ON CONFLICT (user_id, month_year) 
       DO UPDATE SET 
         personal_volume = monthly_group_volume.personal_volume + EXCLUDED.personal_volume,
         group_volume = monthly_group_volume.group_volume + EXCLUDED.group_volume
+      RETURNING group_volume
     `;
 
-    // Now, trace up the line to update group_volumes and calculate differential commission
-    let rateToSubtract = 0.0; // The rate that has already been paid out to downlines
-    const payouts = [];
+    const newBuyerVolume = buyerVolumeQuery.rows[0].group_volume;
+    const buyerTierRate = getRateForVolume(Number(newBuyerVolume));
 
+    await sql`
+      UPDATE monthly_group_volume 
+      SET current_rate = ${buyerTierRate}
+      WHERE user_id = ${buyer_id} AND month_year = ${currentMonthYear}
+    `;
+
+    const payouts = [];
+    let rateToSubtract = buyerTierRate; // The rate that has already been paid out
+
+    // Pay Personal Rebate to Buyer
+    if (buyerTierRate > 0) {
+      const personalRebateAmount = Number(purchase_amount) * buyerTierRate;
+      
+      payouts.push({
+        user_id: buyer_id,
+        rate: buyerTierRate,
+        amount: personalRebateAmount,
+        total_rate_so_far: buyerTierRate,
+        type: 'personal_rebate'
+      });
+
+      await sql`
+        INSERT INTO wallets (user_id, bx_balance)
+        VALUES (${buyer_id}, 0)
+        ON CONFLICT (user_id) DO NOTHING
+      `;
+
+      await sql`
+        UPDATE wallets 
+        SET bx_balance = bx_balance + ${personalRebateAmount}
+        WHERE user_id = ${buyer_id}
+      `;
+
+      await sql`
+        INSERT INTO bx_transactions (sender_wallet_id, receiver_wallet_id, amount, tx_type, description)
+        VALUES (
+          NULL,
+          (SELECT id FROM wallets WHERE user_id = ${buyer_id}),
+          ${personalRebateAmount},
+          'mlm_personal_rebate',
+          ${`Personal rebate from own purchase (Rate: ${(buyerTierRate*100).toFixed(2)}%)`}
+        )
+      `;
+    }
+
+    // Now, trace up the line to update group_volumes and calculate differential commission
     while (currentReferrerId) {
       // Find the referrer
       const referrerQuery = await sql`SELECT id, referrer_id FROM users WHERE id = ${currentReferrerId}`;
