@@ -6,12 +6,18 @@ import { useRouter } from "next/navigation";
 
 // 1. Initial Mock Data (Width and Depth)
 const initialUsers = {
-  "user_A": { id: "user_A", name: "Top Upline (คุณ)", parent_id: null, personal_volume: 20000, group_volume: 60000, current_rate: 0.015, earned_personal: 0, earned_group: 0 },
+  "user_A": { id: "user_A", name: "Top Upline (คุณ)", parent_id: null, personal_volume: 20000, group_volume: 70000, current_rate: 0.015, earned_personal: 0, earned_group: 0 },
   
-  // Leg 1 (Deep - 4 levels under A)
-  "user_B": { id: "user_B", name: "นาย B (Leg 1 - ชั้น 1)", parent_id: "user_A", personal_volume: 15000, group_volume: 25000, current_rate: 0.008, earned_personal: 0, earned_group: 0 },
-  "user_C": { id: "user_C", name: "นาย C (ชั้น 2)", parent_id: "user_B", personal_volume: 5000, group_volume: 10000, current_rate: 0.003, earned_personal: 0, earned_group: 0 },
-  "user_D": { id: "user_D", name: "นาย D (ชั้น 3)", parent_id: "user_C", personal_volume: 5000, group_volume: 5000, current_rate: 0.001, earned_personal: 0, earned_group: 0 },
+  // Leg 1 (Deep)
+  "user_B": { id: "user_B", name: "นาย B (Leg 1 - ชั้น 1)", parent_id: "user_A", personal_volume: 15000, group_volume: 35000, current_rate: 0.008, earned_personal: 0, earned_group: 0 },
+  
+  // user_C has NO personal volume, but has 3 downlines (D, X, Y) summing to 20,000 group volume
+  "user_C": { id: "user_C", name: "นาย C (ชั้น 2 - ไม่มียอดส่วนตัว)", parent_id: "user_B", personal_volume: 0, group_volume: 20000, current_rate: 0.003, earned_personal: 0, earned_group: 0 },
+  
+  "user_D": { id: "user_D", name: "นาย D (ชั้น 3 - ลูกทีมนาย C)", parent_id: "user_C", personal_volume: 5000, group_volume: 5000, current_rate: 0.001, earned_personal: 0, earned_group: 0 },
+  "user_X": { id: "user_X", name: "นาย X (ชั้น 3 - ลูกทีมนาย C)", parent_id: "user_C", personal_volume: 5000, group_volume: 5000, current_rate: 0.001, earned_personal: 0, earned_group: 0 },
+  "user_Y": { id: "user_Y", name: "นาย Y (ชั้น 3 - ลูกทีมนาย C)", parent_id: "user_C", personal_volume: 10000, group_volume: 10000, current_rate: 0.003, earned_personal: 0, earned_group: 0 },
+  
   "user_E": { id: "user_E", name: "นาย E (ชั้น 4 - น้องใหม่สุด)", parent_id: "user_D", personal_volume: 0, group_volume: 0, current_rate: 0.001, earned_personal: 0, earned_group: 0 },
   
   // Leg 2, 3, 4 (Direct width)
