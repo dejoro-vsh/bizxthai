@@ -114,7 +114,7 @@ export default function SimulatorClient({
     
     // Buyer also gets Personal Rebate based on their own Tier Rate
     const personalRebate = totalPurchase * buyerRate;
-    newUsers[buyerId].earned += personalRebate;
+    newUsers[buyerId].earned += (personalRebate + cashback);
     let rateToSubtract = buyerRate;
     let totalCommissionMinted = personalRebate;
     
