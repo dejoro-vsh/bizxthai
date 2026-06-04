@@ -158,7 +158,7 @@ export default function SimulatorPage() {
   };
 
   // Helper to build tree for rendering
-  const buildTree = (parentId: string | null) => {
+  const buildTree = (parentId: string | null): any[] => {
     return Object.values(users)
       .filter(u => u.parent_id === parentId)
       .map(u => ({
