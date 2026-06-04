@@ -88,11 +88,9 @@ export default function SimulatorClient({
       return;
     }
 
-    let currentLogs: any[] = [];
     const addLog = (msg: string, type: 'info' | 'success' | 'warning' = 'info') => {
-      currentLogs.push({ id: Date.now() + Math.random(), msg, type });
-      setLogs((prevLogs) => [...prevLogs, ...currentLogs]);
-      currentLogs = [];
+      const newLog = { id: Date.now() + Math.random(), msg, type };
+      setLogs((prevLogs) => [...prevLogs, newLog]);
     };
 
     addLog(`🛒 บันทึกการซื้อ: ${users[buyerId].name} ยอดรวม ${totalPurchase.toLocaleString()} บาท (เงินสด ${cashAmount}, BX ${bxAmount})`, 'info');
@@ -142,11 +140,9 @@ export default function SimulatorClient({
     setIsSimulating(true);
     setIsMonthEnded(true);
     
-    let currentLogs: any[] = [];
     const addLog = (msg: string, type: 'info' | 'success' | 'warning' = 'info') => {
-      currentLogs.push({ id: Date.now() + Math.random(), msg, type });
-      setLogs((prevLogs) => [...prevLogs, ...currentLogs]);
-      currentLogs = [];
+      const newLog = { id: Date.now() + Math.random(), msg, type };
+      setLogs((prevLogs) => [...prevLogs, newLog]);
     };
 
     addLog(`\n📅 เริ่มต้นการคำนวณปิดยอดวันที่ 31...`, 'info');
