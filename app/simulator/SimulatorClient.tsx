@@ -95,14 +95,19 @@ export default function SimulatorClient({
     // Deep copy users
     const newUsers = { ...users };
 
-    // 1. Update buyer's volume
+    // 1. Update buyer's volume (Volume is still usually total price, but we will clarify this)
     newUsers[buyerId].group_volume += totalPurchase;
     const buyerRate = getRateForVolume(newUsers[buyerId].group_volume);
     newUsers[buyerId].current_rate = buyerRate;
     
-    // Buyer gets 5% Cashback (Mock)
-    const cashback = totalPurchase * 0.05;
-    addLog(`🎁 ระบบจ่าย Cashback 5% เข้ากระเป๋าผู้ซื้อ: ${cashback.toLocaleString()} BX`, 'success');
+    // Buyer gets 5% Cashback ONLY from Cash payment!
+    let cashback = 0;
+    if (cashAmount > 0) {
+      cashback = cashAmount * 0.05;
+      addLog(`🎁 ระบบจ่าย Cashback 5% จากยอดเงินสด (${cashAmount.toLocaleString()} บาท): ${cashback.toLocaleString()} BX`, 'success');
+    } else {
+      addLog(`ℹ️ ซื้อด้วย BX 100% จะไม่ได้รับ Cashback 5%`, 'warning');
+    }
     
     // Buyer also gets Personal Rebate based on their own Tier Rate
     const personalRebate = totalPurchase * buyerRate;
