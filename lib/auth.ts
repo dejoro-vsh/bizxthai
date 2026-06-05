@@ -35,9 +35,12 @@ export const authOptions: NextAuthOptions = {
             const cookieStore = cookies();
             const refCode = cookieStore.get("bizxthai_ref_code")?.value || null;
 
+            // Generate a random 6-character short code for the new user
+            const shortCode = Math.random().toString(36).substring(2, 8);
+
             const result = await sql`
-              INSERT INTO users (line_user_id, display_name, role, referrer_id)
-              VALUES (${lineUserId}, ${displayName}, ${role}, ${refCode})
+              INSERT INTO users (line_user_id, display_name, role, referrer_id, short_code)
+              VALUES (${lineUserId}, ${displayName}, ${role}, ${refCode}, ${shortCode})
               RETURNING id
             `;
             const newUserId = result.rows[0].id;
@@ -64,11 +67,12 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         try {
-          const dbUser = await sql`SELECT id, role FROM users WHERE line_user_id = ${token.sub}`;
+          const dbUser = await sql`SELECT id, role, short_code FROM users WHERE line_user_id = ${token.sub}`;
           if (dbUser.rowCount && dbUser.rowCount > 0) {
             (session.user as any).id = dbUser.rows[0].id;
             (session.user as any).role = dbUser.rows[0].role;
             (session.user as any).lineUserId = token.sub;
+            (session.user as any).shortCode = dbUser.rows[0].short_code;
           }
         } catch (error) {
           console.error("Error fetching session user:", error);

@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import liff from "@line/liff";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 
 export default function Dashboard() {
+  const { data: session } = useSession();
   const [liffLoaded, setLiffLoaded] = useState(false);
   const [profile, setProfile] = useState<{ displayName: string; userId: string; pictureUrl?: string } | null>(null);
 
@@ -13,7 +15,7 @@ export default function Dashboard() {
     if (liffId === "MockLiffId") {
       setLiffLoaded(true);
       // Mock Profile for design preview
-      setProfile({ displayName: "Nu Creator", userId: "U12345", pictureUrl: "https://i.pravatar.cc/150?img=11" });
+      setProfile({ displayName: session?.user?.name || "Nu Creator", userId: "U12345", pictureUrl: session?.user?.image || "https://i.pravatar.cc/150?img=11" });
       return;
     }
 
@@ -23,7 +25,82 @@ export default function Dashboard() {
           liff.getProfile().then((p) => setProfile(p as any));
         }
       }).catch(console.error);
-  }, []);
+  }, [session]);
+
+  const shortCode = (session?.user as any)?.shortCode || "test1";
+  const inviteLink = typeof window !== "undefined" ? `${window.location.origin}/go/${shortCode}` : `https://bizxthai.vercel.app/go/${shortCode}`;
+
+  const handleShareLine = () => {
+    if (liffLoaded && liff.isApiAvailable("shareTargetPicker")) {
+      liff.shareTargetPicker([
+        {
+          type: "flex",
+          altText: "🎉 รับแต้ม 100 BX ฟรีเมื่อสมัคร BizXThai",
+          contents: {
+            type: "bubble",
+            hero: {
+              type: "image",
+              url: "https://images.unsplash.com/photo-1614680376593-902f74cf0d41?q=80&w=1000&auto=format&fit=crop", // A nice placeholder image
+              size: "full",
+              aspectRatio: "20:13",
+              aspectMode: "cover"
+            },
+            body: {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                {
+                  type: "text",
+                  text: "BizXThai Platform",
+                  weight: "bold",
+                  size: "xl"
+                },
+                {
+                  type: "text",
+                  text: "แจกฟรี! 100 BX เพียงสมัครสมาชิกผ่านลิงก์นี้ และรับเงินคืน 5% ทุกการซื้อ",
+                  margin: "md",
+                  wrap: true,
+                  color: "#666666"
+                }
+              ]
+            },
+            footer: {
+              type: "box",
+              layout: "vertical",
+              spacing: "sm",
+              contents: [
+                {
+                  type: "button",
+                  style: "primary",
+                  height: "sm",
+                  action: {
+                    type: "uri",
+                    label: "กดรับสิทธิ์เลย",
+                    uri: inviteLink
+                  },
+                  color: "#00B900"
+                }
+              ],
+              flex: 0
+            }
+          }
+        }
+      ]).then(() => {
+        alert("ส่งคำเชิญเรียบร้อยแล้ว!");
+      }).catch((err) => {
+        console.error("ShareTargetPicker failed", err);
+        alert("ไม่สามารถแชร์ได้ กรุณาก็อปปี้ลิงก์ไปส่งเองแทนนะครับ");
+      });
+    } else {
+      // Fallback for normal browser
+      window.open(`https://line.me/R/msg/text/?${encodeURIComponent("รับฟรี 100 BX ทันทีที่สมัคร BizXThai ผ่านลิงก์นี้! " + inviteLink)}`, "_blank");
+    }
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(inviteLink);
+    alert("คัดลอกลิงก์เรียบร้อยแล้ว!");
+  };
 
   return (
     <div style={{ backgroundColor: "#f8f9fa", minHeight: "100vh", paddingBottom: "20px" }}>
@@ -53,6 +130,35 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Invite Friends Section */}
+      <div style={{ padding: "24px 20px 0" }}>
+        <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", padding: "20px", boxShadow: "0 2px 10px rgba(0,0,0,0.02)", border: "1px solid #eee" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
+            <span style={{ fontSize: "20px" }}>🎁</span>
+            <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#1a1a1a" }}>ชวนเพื่อนรับแต้ม</h3>
+          </div>
+          <p style={{ margin: "0 0 16px 0", fontSize: "13px", color: "#666" }}>รับคอมมิชชันส่วนต่างตลอดสายงาน สูงสุด 2.5% เมื่อเพื่อนที่สมัครซื้อสินค้า</p>
+          
+          <div style={{ display: "flex", gap: "8px" }}>
+            <div 
+              style={{ flex: 1, backgroundColor: "#f3f4f6", padding: "12px", borderRadius: "8px", fontSize: "13px", color: "#4b5563", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+            >
+              {inviteLink}
+            </div>
+            <button onClick={copyToClipboard} style={{ backgroundColor: "#e5e7eb", border: "none", borderRadius: "8px", padding: "0 16px", fontWeight: 600, color: "#374151", cursor: "pointer" }}>
+              Copy
+            </button>
+          </div>
+          
+          <button 
+            onClick={handleShareLine}
+            style={{ width: "100%", marginTop: "12px", backgroundColor: "#06C755", color: "white", border: "none", padding: "14px", borderRadius: "8px", fontWeight: 700, fontSize: "15px", cursor: "pointer", display: "flex", justifyContent: "center", alignItems: "center", gap: "8px" }}
+          >
+            ส่งการ์ดคำเชิญผ่าน LINE
+          </button>
+        </div>
+      </div>
+
       {/* Action Buttons */}
       <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "24px 20px" }}>
         <div style={{ display: "flex", gap: "12px" }}>
@@ -74,16 +180,6 @@ export default function Dashboard() {
             <span style={{ fontSize: "14px", fontWeight: 600, color: "#333" }}>จัดการร้านค้า / ลงขายสินค้า</span>
           </button>
         </Link>
-      </div>
-
-      {/* Recent Activity */}
-      <div style={{ padding: "0 20px" }}>
-        <h3 style={{ fontSize: "16px", color: "#1a1a1a", marginBottom: "16px" }}>รายการล่าสุด</h3>
-        <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", padding: "16px", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", padding: "20px 0", color: "#888", fontSize: "14px" }}>
-            ยังไม่มีรายการเคลื่อนไหว
-          </div>
-        </div>
       </div>
     </div>
   );
